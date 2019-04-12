@@ -9,13 +9,11 @@ library(devtools)
 library(backports)
 library(ggpalaeo)
 
-setwd("C:/Users/krist/Dropbox/Master/kristina_heim/data") # see edits to make this work
 # START! 
 polh <- read.csv("heim_u191.csv", header = FALSE, row.names = 1, sep=",", dec=".")
 polh <- as.data.frame(t(polh)) #transpose matrix
 head(polh)
 
-# EDIT: Far better to get samples in order here, otherwise it causes confusion when doing the plotting later.
 polh <- polh[nrow(polh):1, ]
 polh[is.na(polh)] <- 0 #turn no data values into 0s
 depth <- as.numeric(polh[,"Depth"]) #extract depth variable
@@ -24,7 +22,7 @@ head(polh)
 
 #----------------------------------------------------#
 # Age modelling
-setwd("C:/Users/krist/Dropbox/Master/kristina_heim/clam")
+setwd("C:/Users/...")
 source("clam.R")
 clam("Heim", type=4, sep="," , depthseq = seq(0, 202, 0.5))
 agesTab <- read.table("Cores/Heim/Heim_smooth_spline_ages.txt", header=TRUE, sep="\t")
@@ -36,12 +34,9 @@ accrate <- agesTab$accrate[wantAge]
 plot(age, depth)
 accrate
 setwd("C:/Users/krist/Dropbox/Master/kristina_heim/data") # set the working directory back to the main directory
-polh$Age <- age # overwrites the age file you had on the original dataset with the new ages so you don't have any confusion
-
-# Now you have the age model calculations built into the script !
+polh$Age <- age # overwrites the age file in the original dataset with the new ages
 
 #----------------------------------------------------#
-
 # Influx data. Calculated for later.
 
 heim <- read.csv("Heim_influx_counts.csv", sep = ",", dec = ".")
@@ -54,31 +49,29 @@ heim$Age <- age # overwriting Age in this object so we can use those calculated 
 head(heim)
 
 
-# Funksjon som gir kalkuleringene av pollenkonsentrasjonene og influx verdier basert pÂ sedimentasjonsraten
-#fra dybde-aldersmodellen, f.eks CLAM. Viktig: Er det deposition_time mÂ du endre koden under slik at du deler
-#pollenkonsentrasjonene pÂ deposition_time (dvs influx_rate = pollen_concentration/deposition_time); lurt Â skifte ut navnet
-#pÂ variabelen sedimentation_rate med deposition_time.  ### FRA CLAM ER ACCRATE LIK DEPOSITION TIME!
+# Funksjon som gir kalkuleringene av pollenkonsentrasjonene og influx verdier basert pÃ‚ sedimentasjonsraten
+#fra dybde-aldersmodellen, f.eks CLAM. Viktig: Er det deposition_time mÃ‚ du endre koden under slik at du deler
+#pollenkonsentrasjonene pÃ‚ deposition_time (dvs influx_rate = pollen_concentration/deposition_time); lurt Ã‚ skifte ut navnet
+#pÃ‚ variabelen sedimentation_rate med deposition_time.  ### CLAM: ACCRATE = DEPOSITION TIME!
 conc_influx <- function(df, Marker, Marker_added, Sed_vol, accrate){
    pollen_concentration <- (df/Marker) * (Marker_added/Sed_vol)   
    pollen_concentration <- round(pollen_concentration, digits = 1)
    influx_rate <- round(pollen_concentration/accrate, digits = 1)
    results <- list(pollen_concentration = pollen_concentration, influx_rate = influx_rate)}
 
-# returnerer en liste som inneholder bÂde datasettet med pollenkonsentrasjoner og influx-verdier-
+# returnerer en liste som inneholder bÃ‚de datasettet med pollenkonsentrasjoner og influx-verdier-
 influx_heim <- conc_influx(df = pollen_counts, Marker = heim$Marker, Marker_added = heim$Marker_added, Sed_vol = heim$Sed_vol,
                       accrate = heim$accrate)
   
 #data
 influx_heim$pollen_concentration
 influx_heim$influx_rate
-influx_heim$sedimentation_rate ##Stod originalt influx_heim$deposition_time, men null der ogsÂ, regner med dette er siden det var de verdiene jeg allerede hadde (accrate)
+influx_heim$sedimentation_rate
 
 #write.csv(influx_heim$pollen_concentration, "pollen_concentration_heim_feb_u191.csv", row.names= depth)
 #write.csv(influx_heim$influx_rate, "influx_rate_heim_feb_u1912.csv", row.names = depth)
-
-
 #----------------------------------------------------#
-#LAGER GRUPPER:
+#GROUPS:
 TREES <- c("Betula", "Alnus", "Carpinus", "Corylus", "Fagus", "Picea", "Pinus", "Populus", "Quercus", "Sorbus", "Tilia", 
            "Ulmus")
 
@@ -109,7 +102,7 @@ MARKER <- c("Marker")
 
 STOMATA <- c("Stomata.Pinus", "Stomata.Unknown")
 
-# Regner ut pollenprosent for alle gruppene jeg vil ha videre:
+# Pollen percent:
 # TREES, SHRUBS, HERBS, UNKNOWN:
 sumT <- rowSums(polh[,c(TREES, HERBS, SHRUBS, DSHRUBS, UNKNOWN)])
 
@@ -143,11 +136,10 @@ Newpolha
 
 LOI <- polh$LOI
 setdiff(names(polh), c(TREES, SHRUBS, DSHRUBS, HERBS, UNKNOWN, WATER, FAS, MOSS, CHC, MARKER, STOMATA, LOI))
-setdiff(wanted, names(Newpolha)) #Sjekke om noen av navnene/taxaene ikke er med i noen gruppe
+setdiff(wanted, names(Newpolha)) #Check if any taxa isn't included in a group.
 
 #----------------------------------------------------#
 # Preparing the influx data
-
 polinf1 <- read.csv("influx_rate_heim_feb_u191.csv", header = TRUE, sep = ",", dec = ".")
 head(polinf1)
 polinf1[is.na(polinf1)] <- 0 # turn no data values into 0s
@@ -160,15 +152,13 @@ Newpolinf1 <- polinf1[, wanted]/1000
 Newpolinf1 <- rename(Newpolinf1, `Gymnocarpium` = `Gymnocarpium.dryopteris`,
                             `Betula nana` = `Betula.nana`, `Vaccinium` = `Vaccinium.sp.`, `Dryopteris` = `Dryopteris.sp.`)
 setdiff(wanted, names(Newpolinf1))
-#----------------------------------------------------#
+
 #----------------------------------------------------#
 #Rarify richness
 polhR.df<- polh[,c(TREES, HERBS, SHRUBS, DSHRUBS, UNKNOWN)]
-countTotals <- rowSums(polhR.df) # You counted 2000 grains in one sample! Woah! Is that correct?
+countTotals <- rowSums(polhR.df)
 countTotals
-rarefy.n <- 432
-
-#rarefy.n <- sample(countTotals) # maybe you should standardise this between the two sites (e.g. rarify to the lowest count sum across both sites?)
+rarefy.n <- 432 #Set to lowest pollen sum
 
 heim_richness <- rarefy(polhR.df, rarefy.n) 
 heim_richness
@@ -195,10 +185,10 @@ b1 <- bstick(ma.chclust, 10)
 
 cbind(cutree(ma.chclust, k = 4), age)
 
-# 2. ordination # QUESTION- why not do ordination on Newpolh? Because they just the "wanted" - alchemilla, r. chamaemorus etc might give information about climate gradients etc. --> Sp�r Aage og Anne. (Alts�, Alistair lurer p� hvorfor jeg ikke bare kj�rer ordinasjon p� "wanted".)
+# 2. ordination
 
 # DCA
-pollenh.dca <- decorana(sqrt(pollenh_perc)) # Note- changed percentage data to 
+pollenh.dca <- decorana(sqrt(pollenh_perc))
 scor_h1 <- scores(pollenh.dca, choices = 1:2, display = "sites")
 summary(pollenh.dca)
 pollenh.dca
@@ -222,8 +212,8 @@ var_h2 <- var_h2 %>%
 #----------------------------------------------------#
 ####### PLOTTING THE PERCENTAGE DATA
 cc <- c(rep("chartreuse1", 6), rep("blue", 2), rep("cyan", 1), rep("mediumorchid1", 3), rep("brown1", 3),
-        rep("gold", 1)) #Velger farger
-par(omi = c(0.3, 0.5, 0.6, 0.6)) #Fikse marginen til venstre. http://www.programmingr.com/content/controlling-margins-and-axes-oma-and-mgp/#comment-173
+        rep("gold", 1)) #Colours
+par(omi = c(0.3, 0.5, 0.6, 0.6)) #Margins. http://www.programmingr.com/content/controlling-margins-and-axes-oma-and-mgp/#comment-173
 par(mgp = c(0, 2, 1))
 
 #med cluster
@@ -255,9 +245,6 @@ pc.plot <- strat.plot(var_h1, xRight = 1, xLeft = 0.832, yTop=0.805,
 
 secondary.scale(yvar = rev(age), yvar2 = rev(depth), n = 6, y.rev = TRUE, xLeft = 0.02, yBottom = 0.01, ylabel2 = NA, cex.ylabel2 = 1)
 
-# mtext("Depth (m)", side=3, line=-8, adj = 0.2)
-# text(x=0.650, y=-100, labels = "Depth (m)", srt=60)
-
 # Add cluster zones
 addClustZone(polh.plot, ma.chclust, nZone=4, lwd=1.2, lty=2, col="grey25")
 addClustZone(pc.plot, ma.chclust, nZone=4, lwd=1.2, lty=2, col="grey25")
@@ -267,7 +254,6 @@ text(x=0.61, y=1080, labels="Age (cal. yrs BP)", srt=60, xpd=NA)
 text(x=0.58, y=1320, labels="Depth (cm)", srt=60, xpd=NA)
 text(x=0.62, y=1220, labels="Zone names", srt=60, xpd=NA)
 text(x=0.91, y=25, labels="Heimfjellsmyren 1097 m a.s.l.", cex=1.5, xpd=NA)
-
 
 # text(x=0.6432, y=8800, labels = "HM-1", xpd=NA, cex=0.9)
 # text(x=0.643, y=8000, labels = "HM-2.1", xpd=NA, cex=0.9)
@@ -315,7 +301,7 @@ xx <- c(heim$Age, rev(heim$Age))
 yy1 <- c(rep(0, 29), rev(trees_p))
 polygon(xx, yy1, col = "chartreuse1")
 
-#Hvis man vil fjerne sorte linjer -> border = NA inni hvert polygon
+#If I feel like removing black lines -> border = NA inside each polygon
 
 yy2 <- c(trees_p, rev(trees_p) + rev(shrubs_p))
 polygon(xx, yy2, col = "blue")
@@ -362,7 +348,6 @@ text(x=-2, y=2750, labels = "HM-\n2.3", xpd=NA, cex=0.9)
 text(x=-2, y=1600, labels = "HM-3", xpd=NA, cex=0.9)
 text(x=-2, y=500, labels = "HM-4", xpd=NA, cex=0.9)
 #----------------------------------------------------#
-
 # PCA plot
 dev.off()
 par(mfrow=c(1,1), mar= c(5,4,4,2))
@@ -390,13 +375,13 @@ arrows(x0=rep(0,24), y0=rep(0,24), x1=c(specPC3[spec]), y1=c(specPC4[spec]), col
 text(x=c(specPC3[spec]), y=c(specPC4[spec]), labels=names(specPC3[spec]), cex=1, col="dark red", font=3)
 
 # alternative
-#plot(pollenh.pca) # see here https://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/
+#plot(pollenh.pca) # https://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/
 
 #----------------------------------------------------#
 #Plotting the influx diagram
 cc <- c(rep("chartreuse1", 6), rep("blue", 2), rep("cyan", 2), rep("mediumorchid1", 2), rep("brown1", 3),
-        rep("gold", 1), rep("grey40", 1)) #Velger farger
-par(omi = c(0.3, 0.3, 0.6, 0.6)) #Fikse marginen til venstre. http://www.programmingr.com/content/controlling-margins-and-axes-oma-and-mgp/#comment-173
+        rep("gold", 1), rep("grey40", 1))
+par(omi = c(0.3, 0.3, 0.6, 0.6))
 par(mgp = c(0, 2, 1))
 
 polinf1.plot <- strat.plot(Newpolinf1,
@@ -432,14 +417,4 @@ addClustZone(polinf1.plot, ma.chclust, nZone=4, lwd=1.2, lty=2, col="grey25")
 # text(x=0.6425, y=4700, labels = "Limus\n & \nsilt, \ndark \n(3)", xpd=NA, cex=0.8)
 # text(x=0.6425, y=2000, labels = "Peat", xpd=NA, cex=0.8)
 #----------------------------------------------------#
-#Rarify richness
-polhR.df<- polh[,c(TREES, HERBS, SHRUBS, DSHRUBS, UNKNOWN)]
-countTotals <- rowSums(polhR.df) # You counted 2000 grains in one sample! Woah! Is that correct?
-countTotals
-rarefy.n <- min(countTotals) # maybe you should standardise this between the two sites (e.g. rarify to the lowest count sum across both sites?)
-
-heim_richness <- rarefy(polhR.df, rarefy.n) 
-heim_richness
-plot(age, heim_richness, type ="l")
-#write.csv(heim_richness, "Richness_Heim.csv")
 
