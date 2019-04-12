@@ -16,20 +16,10 @@ library(tidyverse)
 library(devtools)
 library(backports)
 library(ggpalaeo)
-# citation("rioja")
-# citation("tidyverse")
-# citation("vegan")
-# citation("dplyr")
-# citation("devtools")
-# citation("backports")
-# citation("RStudio")
-# citation()
-# RStudio.Version()
-#setRepositories()
-#ap <- available.packages()
 
-setwd("C:/Users/krist/Dropbox/Master/kristina_strip/data")
+setwd("C:/Users/...")
 pol <- read.csv("stripage.csv", header = FALSE, row.names = 1, sep = ",", dec = ".")
+
 #-------------------------------------------------#
 # START! 
 
@@ -56,12 +46,9 @@ accrate <- agesTab$accrate[wantAge]
 plot(age, depth)
 plot(age, accrate)
 setwd("C:/Users/krist/Dropbox/Master/kristina_strip/data") # set the working directory back to the main directory
-pol$Age <- age # overwrites the age file you had on the original dataset with the new ages so you don't have any confusion
-
-# Now you have the age model calculations built into the script !
+pol$Age <- age # overwrites the age file in the original dataset with the new ages
 
 #----------------------------------------------------#
-
 # Influx data. Calculated for later.
 strip <- read.csv("Strip_influx_counts.csv", sep = ",", dec = ".")
 head(strip)
@@ -72,32 +59,31 @@ strip$accrate <- accrate # overwriting acc.rate in this object so we can use tho
 strip$Age <- age # overwriting Age in this object so we can use those calculated from the age model
 head(strip)
 
-# Funksjon som gir kalkuleringene av pollenkonsentrasjonene og influx verdier basert pÂ sedimentasjonsraten
-#fra dybde-aldersmodellen, f.eks CLAM. Viktig: Er det deposition_time mÂ du endre koden under slik at du deler
-#pollenkonsentrasjonene pÂ deposition_time (dvs influx_rate = pollen_concentration/deposition_time); lurt Â skifte ut navnet
-#pÂ variabelen sedimentation_rate med deposition_time.  ### FRA CLAM ER ACCRATE LIK DEPOSITION TIME!
+# Funksjon som gir kalkuleringene av pollenkonsentrasjonene og influx verdier basert p√• sedimentasjonsraten
+#fra dybde-aldersmodellen, f.eks CLAM. Viktig: Er det deposition_time m√• du endre koden under slik at du deler
+#pollenkonsentrasjonene p√• deposition_time (dvs influx_rate = pollen_concentration/deposition_time); lurt √• skifte ut navnet
+#p√• variabelen sedimentation_rate med deposition_time.  ### CLAM: ACCRATE = DEPOSITION TIME!
 conc_influx <- function(df, Marker, Marker_added, Sed_vol, accrate){
   pollen_concentration <- (df/Marker) * (Marker_added/Sed_vol)   
   pollen_concentration <- round(pollen_concentration, digits = 1)
   influx_rate <- round(pollen_concentration/accrate, digits = 1)
   results <- list(pollen_concentration = pollen_concentration, influx_rate = influx_rate)}
 
-# returnerer en liste som inneholder bÂde datasettet med pollenkonsentrasjoner og influx-verdier-
+# returnerer en liste som inneholder b√•de datasettet med pollenkonsentrasjoner og influx-verdier-
 influx_strip <- conc_influx(df = pollen_counts, Marker = strip$Marker, Marker_added = strip$Marker_added, Sed_vol = strip$Sed_vol,
                             accrate = strip$accrate)
 
 #data
 influx_strip$pollen_concentration
 influx_strip$influx_rate
-influx_strip$sedimentation_rate ##Stod originalt influx_heim$deposition_time, men null der ogsÂ, regner med dette er siden det var de verdiene jeg allerede hadde (accrate)
+influx_strip$sedimentation_rate
 
 #write csv file e.g.
 #write.csv(influx_strip$pollen_concentration, "pollen_concentration_strip.csv", row.names = depth)
 #write.csv(influx_strip$influx_rate, "influx_rate_strip.csv", row.names = depth)
 
 #-------------------------------------------------------#
-
-#LAGER GRUPPER:
+#GROUPS:
 
 TREES <- c("Betula", "Alnus", "Carpinus", "Corylus", "Fagus", "Picea", "Pinus", "Populus", "Quercus", "Sorbus", "Tilia", "Ulmus")
 
@@ -161,7 +147,6 @@ wanted <- c("Alnus", "Betula", "Corylus", "Picea", "Pinus", "Ulmus", "Juniperus"
             "Vaccinium.sp.", "Cyperaceae", "Poaceae", "Dryopteris.sp.", "Equisetum",
             "Gymnocarpium.dryopteris", "Botryococcus", "Pediastrum", "Sphagnum")
 
-
 Newpola <- Newpol[, wanted]
 head(Newpola)
 colnames(Newpola)
@@ -192,11 +177,9 @@ setdiff(wanted, names(Newpolinf))
 #----------------------------------------------------#
 #Rarify richness
 polR.df<- pol[,c(TREES, HERBS, SHRUBS, DSHRUBS, UNKNOWN)]
-countTotals <- rowSums(polR.df) # You counted 2000 grains in one sample! Woah! Is that correct?
+countTotals <- rowSums(polR.df)
 countTotals
 rarefy.n <- 432
-
-#rarefy.n <- sample(countTotals) # maybe you should standardise this between the two sites (e.g. rarify to the lowest count sum across both sites?)
 
 strip_richness <- rarefy(polR.df, rarefy.n) 
 strip_richness
@@ -220,7 +203,7 @@ pollenstrip_perc <- pollenstrip_perc[, colSums(pollenstrip_perc>0)>2]
 ma.dist <- vegdist(sqrt(pollenstrip_perc), method="bray", binary=FALSE, diag=FALSE, upper=FALSE, na.rm = FALSE) 
 ma.chclust <- chclust(ma.dist, method="coniss")
 plot(ma.chclust)
-b2 <- bstick(ma.chclust, 10)   #MEN KJÿR FOR ALLE TERR. TAXA
+b2 <- bstick(ma.chclust, 10)
 
 cbind(cutree(ma.chclust, k = 4), age)
 
@@ -293,7 +276,7 @@ addClustZone(char.plots, ma.chclust, nZone=4, lwd=1.5, lty=2, col="grey25")
 text(x=0.61, y=1080, labels="Age (cal. yrs BP)", srt=60, xpd=NA)
 text(x=0.58, y=1320, labels="Depth (cm)", srt=60, xpd=NA)
 text(x=0.62, y=1220, labels="Zone names", srt=60, xpd=NA)
-text(x=0.91, y=25, labels="StripÂtmyrin 990 m a.s.l.", cex=1.5, xpd=NA)
+text(x=0.91, y=25, labels="Strip√•tmyrin 990 m a.s.l.", cex=1.5, xpd=NA)
 
 # text(x=0.62, y=9, labels = "ST-1", xpd=NA, cex=0.9)
 # text(x=0.62, y=8700, labels = "ST-2", xpd=NA, cex=0.9)
@@ -355,9 +338,9 @@ polygon(xx, yy4, col = "mediumorchid1")
 
 legend(x = 7620, y = 20, c("TREES","SHRUBS", "DSHRUBS", "HERBS"), fill= c("chartreuse1", "blue", "cyan", "mediumorchid1"), cex = 0.7)
 box()
-mtext("StripÂtmyrin, 990 m a.s.l.", side = 3, cex = 1.7)
+mtext("Strip√•tmyrin, 990 m a.s.l.", side = 3, cex = 1.7)
 
-#abline(v = ) ---> "v" for vertikale linjer, sett pÂ en for hver sone. 
+#abline(v = ) ---> "v" for vertikale linjer, sett p√• en for hver sone. 
 dev.off()
 # # TOTAL POLLEN DIAGRAM; TRANSPOSED
 par(mgp = c(3, 0.5, 0))
@@ -381,7 +364,7 @@ yy4 <- c(trees_p + shrubs_p + dshrubs_p, rev(trees_p) + rev(shrubs_p) + rev(dshr
 polygon(yy4, xx, col = "mediumorchid1")
 legend(x = 0.7, y = 180, c("TREES","SHRUBS", "DSHRUBS", "HERBS"), fill= c("chartreuse1", "blue", "cyan", "mediumorchid1"), cex = 0.8)
 box()
-mtext("StripÂtmyrin, 990 m a.s.l.", side = 3, cex = 1.7)
+mtext("Strip√•tmyrin, 990 m a.s.l.", side = 3, cex = 1.7)
 abline(h = c(5300, 8750, 9300), lty=4, lwd=1, col="black")
 abline(h = c(3100, 7000), lty=3, lwd=1, col="grey47")
 text(x=-2, y=9600, labels = "ST-1", xpd=NA, cex=0.9)
@@ -400,7 +383,7 @@ loadPC7 = order(abs(summary(pollenstrip.pca)$species[,1]), decreasing=T)[1:9]
 loadPC8 = order(abs(summary(pollenstrip.pca)$species[,2]), decreasing=T)[1:9]
 
 plot(summary(pollenstrip.pca)$sites[,1], summary(pollenstrip.pca)$sites[,2], cex=1, xlab="PC1", ylab="PC2", type="n",
-     ylim=c(-1,2), xlim=c(-1.7,1.5), main= "PCA StripÂtmyrin (990 m a.s.l.)")
+     ylim=c(-1,2), xlim=c(-1.7,1.5), main= "PCA Strip√•tmyrin (990 m a.s.l.)")
 
 abline(h=0, v=0, lty=2)
 
@@ -417,7 +400,7 @@ arrows(x0=rep(0,24), y0=rep(0,24), x1=c(specPC7[spec1]), y1=c(specPC8[spec1]), c
 text(x=c(specPC7[spec1]), y=c(specPC8[spec1]), labels=names(specPC7[spec1]), cex=1, col="dark red", font=3)
 
 # alternative
-#plot(pollenstrip.pca) # see here https://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/
+#plot(pollenstrip.pca) # https://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/
 
 #----------------------------------------------------#
 #Plotting the influx diagram
@@ -442,7 +425,7 @@ secondary.scale(yvar = rev(c(0,age)), yvar2 = rev(c(0,depth)), n = 6, y.rev = TR
 text(x=0.63, y=1080, labels="Age (cal. yrs BP)", srt=60, xpd=NA)
 text(x=0.60, y=1320, labels="Depth (cm)", srt=60, xpd=NA)
 text(x=0.65, y=1200, labels="Zone names", srt=60, xpd=NA)
-text(x=0.90, y=25, labels="StripÂtmyrin 990 m a.s.l.", cex=1.5, xpd=NA)
+text(x=0.90, y=25, labels="Strip√•tmyrin 990 m a.s.l.", cex=1.5, xpd=NA)
 
 addClustZone(polinf.plot, ma.chclust, nZone=4, lwd=1.2, lty=2, col="grey25")
 
@@ -494,33 +477,5 @@ yy4 <- c(trees_p + shrubs_p + dshrubs_p, rev(trees_p) + rev(shrubs_p) + rev(dshr
 polygon(yy4, xx, col = "mediumorchid1")
 legend(x = 0.4, y = 180, c("TREES","SHRUBS", "DSHRUBS", "HERBS"), fill= c("chartreuse1", "blue", "cyan", "mediumorchid1"), cex = 0.8)
 box()
-mtext("StripÂtmyrin, 990 m a.s.l.", side = 3, cex = 1.7)
+mtext("Strip√•tmyrin, 990 m a.s.l.", side = 3, cex = 1.7)
 abline(h = c(2714, 8143, 9071), lty=4, lwd=1, col="black")
-
-#mtext("Age cal. yrs BP", side = 2,line = 3)
-#box(bty="c", lwd = 0.5)
-#mtext("TREES", side = 3, line = 1.5)
-# 
-# ?mtext
-# #need to add names on top - not done.
-# 
-# 
-# 
-# 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
